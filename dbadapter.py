@@ -105,7 +105,7 @@ class DBAdapter:
             s.mv = float(r[4])
             s.zmin = float(r[5])
             s.blobToData(str(r[6]))
-
+            s.naam=str(row[10])
             result.append(s)
 
         return result
@@ -124,6 +124,19 @@ class DBAdapter:
             result.id = int(row[0])
             result.blobToData(str(row[1]))
             return result
+
+    def getKleuren(self):
+        '''
+        Geeft de kleuren van de grondlagen uit de database in de vorm
+        id, kleur
+        '''
+        result = []
+        self.cursor.execute('SELECT id, kleur FROM grondsoort')
+        rows = self.cursor.fetchall()
+        for r in rows:
+            result.append([r[0], r[1]])
+        return result
+
 
     def getGrondsoortById(self, id):
         '''
@@ -179,9 +192,11 @@ class DBAdapter:
 if __name__=="__main__":
     db = DBAdapter("c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite")
     db.open()
-    s = db.getSonderingById(1220)
-    opb = db.getOpbouwById(1220)
+    s = db.getSonderingById(2)
+    opb = db.getOpbouwById(2)
     g = db.getGrondsoortById(2)
+    k = db.getKleuren()
+    print k
     db.close()
 
 
