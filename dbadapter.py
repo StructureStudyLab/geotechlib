@@ -58,13 +58,13 @@ class DBAdapter:
         return self.cursor.fetchone()
 
     def addSondering(self, deSondering, deOpbouwId):
-        self.cursor.execute('INSERT INTO sondering VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        self.cursor.execute('INSERT INTO sondering VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                             (deSondering.id, deSondering.date, deSondering.x, deSondering.y,
                              deSondering.mv, deSondering.zmin, sqlite3.Binary(deSondering.dataAsText()),
-                             deOpbouwId, deSondering.getLatitude(), deSondering.getLongitude()))
+                             deOpbouwId, deSondering.getLatitude(), deSondering.getLongitude(), deSondering.naam))
 
     def addOpbouw(self, deOpbouw):
-        self.cursor.execute('INSERT INTO opbouw VALUES(?, ?)', (deOpbouw.id, sqlite3.Binary(deOpbouw.asText())))
+        self.cursor.execute('INSERT INTO opbouw VALUES(?, ?, ?)', (deOpbouw.id, sqlite3.Binary(deOpbouw.asText()), deOpbouw.bron))
 
     def getSonderingById(self, id):
         '''
@@ -84,6 +84,7 @@ class DBAdapter:
             s.mv = float(row[4])
             s.zmin = float(row[5])
             s.blobToData(str(row[6]))
+            s.naam=str(row[10])
             return s
 
     def getAllSonderingen(self):

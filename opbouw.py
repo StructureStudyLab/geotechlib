@@ -8,10 +8,14 @@ class Opbouw(object):
     '''
                   0     1         2
     grondlaag = zmax, zmin, grondsoort_id
+
+    De bron geeft aan hoe er tot de grondopbouw gekomen is
+        auto_generated = automatisch uit sonderingen gegenereerd
     '''
     def __init__(self):
         self.id = -1
         self.grondlagen = []
+        self.bron = ""
 
     def optimize(self):
         '''

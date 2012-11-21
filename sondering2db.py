@@ -37,7 +37,8 @@ import sys, os, sondering, sondering2opbouw, dbadapter
 searchpath = ""
 if len(sys.argv)!=2:
     print "[WARNING] No path given to find the GEF files, using default."
-    searchpath = "c:\\Users\\breinbaas\\Documents\\Breinbaas\\GEF\\"
+    #searchpath = "c:\\Users\\breinbaas\\Documents\\Breinbaas\\GEF\\"
+    searchpath = "c:\\Users\\breinbaas\\Documents\\Waternet\\DAM\\117X\\030 Sonderingen\\GEF\\"
 else:
     searchpath = sys.argv[1]
 
@@ -45,7 +46,7 @@ else:
 logFile = open("log.txt", 'w')
 
 #open the database
-db = db_adapter.DBAdapter("c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite")
+db = dbadapter.DBAdapter("c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite")
 db.open()
 
 #assign the id+1 to the first new entry
@@ -77,6 +78,12 @@ for filename in onlyfiles:
 
     son = sondering.Sondering()
     son.id = currentSonderingId
+
+    import re
+    insensitive_gef = re.compile(re.escape('.gef'), re.IGNORECASE)
+    son.naam = insensitive_gef.sub('', filename)
+
+    #son.naam = filename.
     error = son.readFromFile(filename)
 
     if error != "none":
@@ -86,6 +93,7 @@ for filename in onlyfiles:
     else:
         opbouw = sondering2opbouw.convertToInterval(son, 0.1)
         opbouw.id = currentOpbouwId
+        opbouw.bron = "auto_generated"
         opbouw.optimize()
         if uniqueEntry(son.x, son.y):
             addEntry(son, opbouw)
