@@ -37,9 +37,6 @@ class CPT:
         self.date = datetime.datetime(1900,1,1)
         self.values = [] #z, qc, pw, wg
 
-    def __cmp__(self):
-        return NotImplementedError
-
     def dataAsText(self):
         '''
         Return a list of strings containing the values like;
