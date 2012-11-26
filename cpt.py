@@ -1,52 +1,64 @@
 '''
 Created on 2 nov. 2012
 
-Reads a gef file and stores the interesting stuff in this class
+Reads a cpt file and stores the interesting stuff in this class
 
 note:
 only accepts cpt files
-only accepts if they have qc, pw, z
+only accepts if they have qc (conusweerstand), pw (plaatselijke wrijving), z (depth)
 only reads files where columninfo comes BEFORE columnvoid (which is default)
 
 @author: breinbaas
 '''
 import sys, datetime, latlon
 
-class Sondering:
+class CPT:
     '''
-    De Sondering class bevat informatie over een sondering. De volgende waarden zijn hier opgeslagen
-    id:        ID van de sondering
-    mv:        Het maaiveld van de sondering
-    x:         De x-coordinaat in RD stelsel
-    y:         De y=coordinaat in RD stelsel
-    zmin:      De maximale diepte van de sondering in m tov ref
-    date:      De uitvoeringsdatum
-    values:    Een lijst met rijen in de vorm van [z, qc, pw, wg]
+    The CPT class contains the following cpt information;
+    id:        ID
+    name:      filename that was read
+    zmax:      Highest point of the CPT
+    x:         X-coordinate
+    y:         Y-coordinate
+    zmin:      Lowest point of the CPT
+    date:      Date of test
+    values:    Measurements in the order of [z, qc, pw, wg]
     '''
     def __init__(self):
         '''
-        Initialisatie van de class.
+        Initialisation.
         '''
         self.id = -1
-        self.naam = ""
-        self.mv = 0.0
+        self.name = ""
         self.x = 0.0
         self.y = 0.0
+        self.zmax = 0.0
         self.zmin = 0.0
         self.date = datetime.datetime(1900,1,1)
         self.values = [] #z, qc, pw, wg
 
+    def __cmp__(self):
+        return NotImplementedError
+
     def dataAsText(self):
         '''
-        Maakt een tekstlijn van de data voor uitvoer van de meetgegevens naar bv csv.
-        returns: lijst met strings
+        Return a list of strings containing the values like;
+        -1.23;1.234;0.013;0.562
         '''
         result = "z [m tov ref];qc [MPa];fs [MPa];wg [%]\n"
         for z, qc, pw, wg in self.values:
             result += "%.2f;%.3f;%.3f;%.3f\n" % (z, qc, pw, wg)
         return result
 
+    def getValuesAt(self, _z):
+        "Returns the values at the given depth. Returns None is _z is out of range"
+        for z, qc, pw, wg in self.values:
+            if (z < _z):
+                return qc, pw, wg
+        return None, None, None
+
     def blobToData(self, data):
+        "Reads a blob from the database and translates it back to values."
         lines = data.split('\n')
         self.values = []
 
@@ -58,24 +70,22 @@ class Sondering:
 
     def getLatitude(self):
         '''
-        Geeft de latitude van de sondering in WGS84 coordinaten.
-        returns: double
+        Returns the latitude of a cpt file (WGS84 coordinates).
         '''
         lat, lon = latlon.RDToLatLon(self.x, self.y)
         return lat
 
     def getLongitude(self):
         '''
-        Geeft de longitude van de sondering in WGS84 coordinaten.
-        returns: double
+        Returns the longitude of a cpt file (WGS84 coordinates).
         '''
         lat, lon = latlon.RDToLatLon(self.x, self.y)
         return lon
 
     def readFromFile(self, filename):
         '''
-        Leest een sondering in vanuit een GEF bestand.
-        returns: string met eventuele foutmelding of `none` als er geen fout is gevonden.
+        Reads a CPT from a GEF file.
+        returns: string with error or `none` if there is no error.
         '''
         readHeader = True
         colid = {'dz':-1, 'qc':-1, 'pw':-1, 'wg':-1}
@@ -117,7 +127,7 @@ class Sondering:
                     if line.upper().find("GEF-CPT-Report".upper()) > -1:
                         typegef = "sondering"
                 elif line.find("#ZID")>-1:
-                    self.mv = float(args[1].strip())
+                    self.zmax = float(args[1].strip())
                 elif line.find("#XYID") > -1:
                     #make sure the x and y have 2 digits
                     self.x = float(args[1].strip())
@@ -160,7 +170,7 @@ class Sondering:
                         else:
                             wg = float(args[colid['wg']])
 
-                        self.values.append([(self.mv-abs(dz)), qc, pw, wg])
+                        self.values.append([(self.zmax-abs(dz)), qc, pw, wg])
                 else:
                     return "ERROR: Found gef file %s of type %s" % (filename, typegef)
 

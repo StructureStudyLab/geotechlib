@@ -1,17 +1,17 @@
 '''
 Created on 8 nov. 2012
 
-De adapterklasse tussen de sqlite3 database en eventuele logica die met de data aan de slag wil.
+The adapter that stands between the sqlite database and the applications using
+the database. Contains methods for data retrieval and storage.
 
 @author: breinbaas
 '''
 
-import sqlite3, sondering, opbouw, datetime
+import sqlite3, cpt, vsoil, datetime
 
 class DBAdapter:
     '''
-    Dit is de database adapter tussen de dijkwachter sqlite database
-    en alle aanroepende programma's
+    The adapter between the sqlite3 database with geotechnical information.
     '''
     def __init__(self, filename):
         '''
@@ -26,130 +26,130 @@ class DBAdapter:
         except sqlite3.Error, e:
             print "Error %s:" % e.args[0]
 
-    def deleteAllSonderingen(self):
+    def deleteAllCPTs(self):
+        '''
+        Delete all CPT files.
+        '''
         pass #TODO: implement
 
-    def getMaxIDFromSonderingen(self):
+    def getMaxIDFromCPT(self):
         '''
-        Zoekt de hoogste id op in de lijst met sonderingen.
-        returns: int
+        Return the highest id (int) in the cpt table.
         '''
-        self.cursor.execute('SELECT max(id) FROM sondering')
+        self.cursor.execute('SELECT max(id) FROM cpt')
         args = self.cursor.fetchone()
         if args[0] != None:
             return int(args[0])
         else:
             return -1
 
-    def getMaxIDFromOpbouw(self):
+    def getMaxIDFromVSoil(self):
         '''
-        Zoekt de hoogste id op in de lijst met sonderingen.
-        returns: int
+        Return the highest id (int) in the vsoil table.
         '''
-        self.cursor.execute('SELECT max(id) FROM sondering')
+        self.cursor.execute('SELECT max(id) FROM vsoil')
         args = self.cursor.fetchone()
         if args[0] != None:
             return int(args[0])
         else:
             return -1
 
-    def getSonderingAt(self, x, y):
-        self.cursor.execute("SELECT * FROM sondering where x=%s AND y=%s" % (x,y))
+    def getCPTAt(self, x, y):
+        self.cursor.execute("SELECT * FROM cpt where x=%s AND y=%s" % (x,y))
         return self.cursor.fetchone()
 
-    def addSondering(self, deSondering, deOpbouwId):
-        self.cursor.execute('INSERT INTO sondering VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                            (deSondering.id, deSondering.date, deSondering.x, deSondering.y,
-                             deSondering.mv, deSondering.zmin, sqlite3.Binary(deSondering.dataAsText()),
-                             deOpbouwId, deSondering.getLatitude(), deSondering.getLongitude(), deSondering.naam))
+    def addCPT(self, theCPT, theVSoilId):
+        self.cursor.execute('INSERT INTO cpt VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                            (theCPT.id, theCPT.date, theCPT.x, theCPT.y,
+                             theCPT.zmax, theCPT.zmin, sqlite3.Binary(theCPT.dataAsText()),
+                             theVSoilId, theCPT.getLatitude(), theCPT.getLongitude(), theCPT.name))
 
-    def addOpbouw(self, deOpbouw):
-        self.cursor.execute('INSERT INTO opbouw VALUES(?, ?, ?)', (deOpbouw.id, sqlite3.Binary(deOpbouw.asText()), deOpbouw.bron))
+    def addVSoil(self, theVSoil):
+        self.cursor.execute('INSERT INTO vsoil VALUES(?, ?, ?)', (theVSoil.id, theVSoil.source, sqlite3.Binary(theVSoil.asText())))
 
-    def getSonderingById(self, id):
+    def getCPTById(self, id):
         '''
-        Geeft een sondering terug met de bijbehorende id en None als er niks gevonden is.
+        Return a CPT class with the corresponding id or None.
         '''
         result = None
-        self.cursor.execute('SELECT * FROM sondering WHERE id=%d' % (id))
+        self.cursor.execute('SELECT * FROM cpt WHERE id=%d' % (id))
         row = self.cursor.fetchone()
         if row[0] == None:
             return None
         else:
-            s = sondering.Sondering()
-            s.id = int(row[0])
-            s.date = row[1] #TODO: inlezen datetime
-            s.x = float(row[2])
-            s.y = float(row[3])
-            s.mv = float(row[4])
-            s.zmin = float(row[5])
-            s.blobToData(str(row[6]))
-            s.naam=str(row[10])
-            return s
+            c = cpt.CPT()
+            c.id = int(row[0])
+            c.date = row[1] #TODO: inlezen datetime
+            c.x = float(row[2])
+            c.y = float(row[3])
+            c.zmax = float(row[4])
+            c.zmin = float(row[5])
+            c.blobToData(str(row[6]))
+            c.name=str(row[10])
+            return c
 
-    def getAllSonderingen(self):
+    def getAllCTPs(self):
         '''
-        Geeft een lijst met alle Sondering classes terug die in de database
-        gevonden zijn.
-        returns: lijst met Sondering classes
+        Return a list with all CPT's found in the database.
+        Careful with large collections!
         '''
         result = []
-        self.cursor.execute('SELECT * FROM sondering')
+        self.cursor.execute('SELECT * FROM cpt')
         rows = self.cursor.fetchall()
         for r in rows:
-            s = sondering.Sondering()
-            s.id = int(r[0])
-            s.date = r[1] #TODO: inlezen datetime
-            s.x = float(r[2])
-            s.y = float(r[3])
-            s.mv = float(r[4])
-            s.zmin = float(r[5])
-            s.blobToData(str(r[6]))
-            s.naam=str(row[10])
-            result.append(s)
+            c = cpt.CPT()
+            c.id = int(r[0])
+            c.date = r[1] #TODO: inlezen datetime
+            c.x = float(r[2])
+            c.y = float(r[3])
+            c.mv = float(r[4])
+            c.zmin = float(r[5])
+            c.blobToData(str(r[6]))
+            c.naam=str(row[10])
+            result.append(c)
 
         return result
 
-    def getOpbouwById(self, id):
+    def getVSoilById(self, id):
         '''
-        Geeft een opbouw terug met de bijbehorende id en None als er niks gevonden is.
+        Returns a VSoil object with the corresponding id or None.
         '''
         result = None
-        self.cursor.execute('SELECT * FROM opbouw WHERE id=%d' % (id))
+        self.cursor.execute('SELECT * FROM vsoil WHERE id=%d' % (id))
         row = self.cursor.fetchone()
         if row[0] == None:
             return None
         else:
-            result = opbouw.Opbouw()
+            result = vsoil.VSoil()
             result.id = int(row[0])
-            result.blobToData(str(row[1]))
+            result.source = str(row[1])
+            result.blobToData(str(row[2]))
             return result
 
-    def getKleuren(self):
+    def getColors(self):
         '''
-        Geeft de kleuren van de grondlagen uit de database in de vorm
-        id, kleur
+        Returns a list of all colors [id, color] found in the vsoil table.
         '''
         result = []
-        self.cursor.execute('SELECT id, kleur FROM grondsoort')
+        self.cursor.execute('SELECT id, color FROM soiltypes')
         rows = self.cursor.fetchall()
         for r in rows:
             result.append([r[0], r[1]])
         return result
 
 
-    def getGrondsoortById(self, id):
+    def getSoiltypeById(self, id):
         '''
-        Geeft en grondlaag terug.
+        Returns a soiltype with the corresponding id or None.
         '''
         result = None
-        self.cursor.execute('SELECT * FROM grondsoort WHERE id=%d' % (id))
+        self.cursor.execute('SELECT * FROM soiltypes WHERE id=%d' % (id))
         row = self.cursor.fetchone()
         if row[0] == None:
             return None
         else:
-            import grondsoort
-            result = grondsoort.Grondsoort()
+            import soiltype
+            result = soiltype.SoilType()
 
             def setUnknownIfNone(value):
                 if value == None:
@@ -158,11 +158,11 @@ class DBAdapter:
                     return float(value)
 
             result.id = int(row[0])
-            result.naam = str(row[1])
-            result.omschrijving = str(row[2])
-            result.bron = str(row[3])
-            result.yd = setUnknownIfNone(row[4])
-            result.yn = setUnknownIfNone(row[5])
+            result.name = str(row[1])
+            result.description = str(row[2])
+            result.source = str(row[3])
+            result.ydry = setUnknownIfNone(row[4])
+            result.ysat = setUnknownIfNone(row[5])
             result.c = setUnknownIfNone(row[6])
             result.phi = setUnknownIfNone(row[7])
             result.upsilon = setUnknownIfNone(row[8])
@@ -181,7 +181,7 @@ class DBAdapter:
             result.Cap = setUnknownIfNone(row[21])
             result.Cas = setUnknownIfNone(row[22])
             result.cv = setUnknownIfNone(row[23])
-            result.kleur = str(row[24])
+            result.color = str(row[24])
             return result
 
     def close(self):
@@ -192,11 +192,11 @@ class DBAdapter:
 if __name__=="__main__":
     db = DBAdapter("c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite")
     db.open()
-    s = db.getSonderingById(2)
-    opb = db.getOpbouwById(2)
-    g = db.getGrondsoortById(2)
-    k = db.getKleuren()
-    print k
+    cpt = db.getCPTById(2)
+    vs = db.getVSoilById(2)
+    g = db.getSoiltypeById(2)
+    c = db.getColors()
+    print cpt, vs, g, c
     db.close()
 
 
