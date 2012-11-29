@@ -30,7 +30,7 @@ class SoilType:
     Cs:             Compression index Cs [-]
     Cap:            Compression index C'p [-]
     Cas:            Compression index C's [-]
-    cv:             Cv value [#TODO opzoeken]
+    cv:             Cv value [m2/s]
     color:          Color in HTML code, ie. #RRGGBB
     '''
     def __init__(self):
