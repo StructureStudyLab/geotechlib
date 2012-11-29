@@ -7,22 +7,28 @@ import sys, vsoil
 
 def getSoiltypeByWgAndCUR162(wg):
     '''
-    Returns a soiltype according to the table in CUR162
-    TODO: refer to right table
-    TODO: make solitypes that correspond to the CUR162 values
-    TODO: edit list below to correct values
+    Returns a soiltype according to the table in CUR162 (electrical cone)
+    TODO: replace hard coded ids to database ids based on the soil name
     '''
-    if wg <= 1.0: return 0
-    elif wg > 1.0 and wg <= 2.0:
-        return 1
-    elif wg > 2.0 and wg <= 2.5:
-        return 2
-    elif wg > 2.5 and wg <= 3.0:
-        return 3
-    elif wg > 3.0 and wg <= 4.0:
-        return 4
-    elif wg > 4.0:
-        return 5
+    if wg <= 0.6: return 45
+    elif wg > 0.6 and wg <= 0.8:
+        return 43
+    elif wg > 0.8 and wg <= 1.1:
+        return 43
+    elif wg > 1.1 and wg <= 1.4:
+        return 42
+    elif wg > 1.4 and wg <= 1.8:
+        return 41
+    elif wg > 1.8 and wg <= 2.2:
+        return 40
+    elif wg > 2.2 and wg <= 2.5:
+        return 39
+    elif wg > 2.5 and wg <= 5.0:
+        return 38
+    elif wg > 5.0 and wg <= 8.1:
+        return 37
+    elif wg > 8.1:
+        return 36
 
 def convertToInterval(cpt, min_interval):
     '''
