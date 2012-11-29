@@ -32,6 +32,14 @@ class DBAdapter:
         '''
         pass #TODO: implement
 
+    def getNumCPTs(self):
+        self.cursor.execute('SELECT COUNT(*) FROM cpt')
+        args = self.cursor.fetchone()
+        if args[0] != None:
+            return int(args[0])
+        else:
+            return -1
+
     def getMaxIDFromCPT(self):
         '''
         Return the highest id (int) in the cpt table.
@@ -57,6 +65,20 @@ class DBAdapter:
     def getCPTAt(self, x, y):
         self.cursor.execute("SELECT * FROM cpt where x=%s AND y=%s" % (x,y))
         return self.cursor.fetchone()
+
+    def getCPTandVSoil(self, index):
+        '''Returns the cpt and the connected vsoil (if any) at the given index
+        or None if the index is invalid.'''
+        cpt = None
+        vsoil= None
+        self.cursor.execute("SELECT id, vsoil_id FROM cpt LIMIT 1 OFFSET %d" % index)
+        args = self.cursor.fetchone()
+        if args[0] != None:
+            cpt = self.getCPTById(int(args[0]))
+            vsoil = self.getVSoilById(int(args[1]))
+            return cpt, vsoil
+        else:
+            return None, None
 
     def addCPT(self, theCPT, theVSoilId):
         self.cursor.execute('INSERT INTO cpt VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
