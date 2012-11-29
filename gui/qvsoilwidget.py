@@ -21,17 +21,22 @@ pwmin = 0.0
 wgmax = 10.
 wgmin = 10.
 
-class QVSoilWidget(QWidget):
-    def __init__(self, cpt=None, vsoil=None, parent=None):
+class QVSoilWidget(QFrame):
+    def __init__(self, parent=None, cpt=None, vsoil=None, ):
         """
         Initializer, sets up members.
         """
         super(QVSoilWidget, self).__init__(parent)
+        #use a nice sunken style
+        self.setFrameShape(QFrame.StyledPanel)
+        self.setFrameShadow(QFrame.Sunken)
+
         #define some labels to show information on the widget
         self.lblZ =  QLabel(self)
         self.lblQc = QLabel(self)
         self.lblPw = QLabel(self)
         self.lblWg = QLabel(self)
+        self.lblName = QLabel(self)
 
         #use fontmetrics to assign the minimum width of the labels
         fm = QFontMetricsF(self.font())
@@ -39,6 +44,7 @@ class QVSoilWidget(QWidget):
         self.lblQc.setMinimumWidth(fm.width("99.9MPa"))
         self.lblPw.setMinimumWidth(fm.width("9.99MPa"))
         self.lblWg.setMinimumWidth(fm.width("99.9%"))
+        self.lblName.setMinimumWidth(fm.width("123456789012345678901234567890"))
 
         #there are three graphics, each has a start and end point
         #these are (re)calculated at the resize event
@@ -50,25 +56,50 @@ class QVSoilWidget(QWidget):
         self.xendwg = 0
 
         #references to the cpt, colorlist and the vsoil object
-        self.cpt = cpt
-        self.colors = []
-        self.vsoil = None
+        self.__cpt = cpt
+        self.__vsoil = vsoil
+        self.__colors = []
 
         #flags to display or hide the cpt and / or opbouw
         self.showVSoil = True
         self.showCPT = True
 
-        #only expand and don't get to small
+        #only expand and don't get too small
         self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         self.setMinimumSize(self.minimumSizeHint())
 
         #information for the graphics
-        self.margin = [20, 20, 30, 30] #top, bottom, left, right
+        self.margin = [50, 20, 30, 30] #top, bottom, left, right
         self.share = [0.6,0.2,0.2] #part of screen for qc, pw and wg (0.5 being 50%, total = max 100% = 1)
         self.border = 10 #distance between two graphs
 
         #activate mouse tracking or else the mousemove event is not tracked
         self.setMouseTracking(True)
+
+    def _cpt(self):
+        return self.__cpt
+
+    def setCPT(self, cpt):
+        self.__cpt = cpt
+        self.lblName.setText(cpt.name)
+        self.lblPw.setText("")
+        self.lblQc.setText("")
+        self.lblWg.setText("")
+        self.lblZ.setText("")
+        self.repaint()
+
+    def _vsoil(self):
+        return self.__vsoil
+
+    def setVSoil(self, vsoil):
+        self.__vsoil = vsoil
+        self.repaint()
+
+    def _colors(self):
+        return self.__vsoil
+
+    def setColors(self, colors):
+        self.__colors = colors
 
     def resizeEvent(self, event=None):
         """
@@ -86,7 +117,8 @@ class QVSoilWidget(QWidget):
         self.lblQc.move(self.margin[2], self.height()-self.margin[1])
         self.lblPw.move(self.xstartpw, self.height()-self.margin[1])
         self.lblWg.move(self.xstartwg, self.height()-self.margin[1])
-        self.lblZ.move(self.margin[2], self.margin[1] - fm.height())
+        self.lblZ.move(self.margin[2], self.margin[0] - fm.height())
+        self.lblName.move(self.margin[2], 5)
 
     def getInfoFromPosition(self, ypos):
         """
@@ -98,10 +130,10 @@ class QVSoilWidget(QWidget):
         wg = 0.
         pw = 0.
 
-        z = self.cpt.zmax - (ypos - self.margin[0]) * \
-            (self.cpt.zmax - self.cpt.zmin) / (self.height() - self.margin[0] - self.margin[1])
+        z = self.__cpt.zmax - (ypos - self.margin[0]) * \
+            (self.__cpt.zmax - self.__cpt.zmin) / (self.height() - self.margin[0] - self.margin[1])
 
-        qc, pw, wg = self.cpt.getValuesAt(z)
+        qc, pw, wg = self.__cpt.getValuesAt(z)
         return z, qc, pw, wg
 
     def mouseMoveEvent(self, event):
@@ -109,6 +141,9 @@ class QVSoilWidget(QWidget):
         If the mouse is moving in the graph area information is shown of the
         values at the depth that the mouse is at.
         """
+        if self.__cpt == None:
+            return
+
         x = event.pos().x()
         y = event.pos().y()
 
@@ -130,31 +165,37 @@ class QVSoilWidget(QWidget):
         """
         Overridden paint event that displays the graphs.
         """
-        if self.cpt==None or self.vsoil==None:
+        #always show a nice white relaxing background
+        painter = QPainter(self)
+        painter.begin(self)
+        painter.fillRect(event.rect(), Qt.white)
+
+        #only continue if there is something to display
+        if self.showCPT and self.__cpt==None:
+            return
+        if self.showVSoil and self.__vsoil==None:
             return
 
-        painter = QPainter(self)
         painter.setPen(Qt.black)
-
         if self.showVSoil:
-            ymax = self.vsoil.soillayers[0][0]
-            ymin = self.vsoil.soillayers[-1][1]
+            ymax = self.__vsoil.soillayers[0][0]
+            ymin = self.__vsoil.soillayers[-1][1]
             dy = ymax - ymin
             sy = dy / (self.height() - self.margin[0] - self.margin[1]) #m / px
 
             y1 = self.margin[0]
-            for g in self.vsoil.soillayers:
+            for g in self.__vsoil.soillayers:
                 x1 = self.margin[2]
                 x2 = self.width() - self.margin[3]
                 y2 = int(self.margin[0] + (ymax - g[1]) / sy)
                 k = QColor()
-                k.setNamedColor(self.colors[g[2]][1])
+                k.setNamedColor(self.__colors[g[2]][1])
                 painter.fillRect(x1,y1,x2-x1,y2-y1,QBrush(k))
                 y1 = y2
 
         if self.showCPT:
-            ymax = self.cpt.zmax
-            ymin = self.cpt.zmin
+            ymax = self.__cpt.zmax
+            ymin = self.__cpt.zmin
             dy = ymax - ymin
             dx = self.width() - self.margin[2] - self.margin[3] - self.border * 2
             sy = dy / (self.height() - self.margin[0] - self.margin[1]) #m / px
@@ -172,8 +213,8 @@ class QVSoilWidget(QWidget):
                 x = self.xstartqc + qc / qcmax * (self.xendqc - self.xstartqc)
                 painter.drawLine(x, self.margin[0], x, self.height()-self.margin[1])
 
-            for i in range(0, len(self.cpt.values)):
-                z, qc, pw, wg = self.cpt.values[i]
+            for i in range(0, len(self.__cpt.values)):
+                z, qc, pw, wg = self.__cpt.values[i]
 
                 if qc > qcmax:
                     qc = qcmax
@@ -204,6 +245,7 @@ class QVSoilWidget(QWidget):
                 qcx1 = qcx2
                 pwx1 = pwx2
                 wgx1 = wgx2
+        painter.end()
 
 if __name__ == '__main__':
     import sys
@@ -227,9 +269,9 @@ if __name__ == '__main__':
 
     app = QApplication(sys.argv)
     form = QVSoilWidget()
-    form.cpt = cpt
-    form.vsoil = vs
-    form.colors = colors
+    form.setCPT(cpt)
+    form.setVSoil(vs)
+    form.setColors(colors)
     form.setWindowTitle("QVSoilWidget")
     form.move(0, 0)
     form.show()
