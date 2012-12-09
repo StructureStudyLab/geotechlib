@@ -1,3 +1,13 @@
+#-------------------------------------------------------------------------------
+# Name:        latlon
+# Purpose:
+#
+# Author:      breinbaas
+#
+# Created:     29-11-2012
+# Copyright:   (c) breinbaas 2012
+# Licence:     GPL
+#-------------------------------------------------------------------------------
 '''
 Created on 6 nov. 2012
 
@@ -5,6 +15,27 @@ Created on 6 nov. 2012
 '''
 
 import math, numpy
+
+def convertFromCSV(filename, colX, colY, sep=',', containsHeader = True):
+    '''
+    Read a csv file and adds two columns with the latitude and longitude based
+    on the given x and y values.
+    You have to supply the column numbers (1 = first), the seperator
+    and if the csv file contains a header.
+    '''
+    lines = open(filename,'r').readlines()
+    outfile = open(filename+'.conv', 'w')
+    start = 0
+    if containsHeader:
+        start = 1
+    for i in range(start,len(lines)):
+        args = lines[i].split(sep)
+        x = float(args[colX-1])
+        y = float(args[colY-1])
+        lat, lon = RDToLatLon(x,y)
+        outline = "%s%s%.8f%s%.8f\n" % (lines[i].strip(), sep, lat, sep, lon)
+        outfile.write(outline)
+    outfile.close()
 
 def RDToLatLon(x, y):
     '''
@@ -80,6 +111,7 @@ def LatLonToRD(lat, lon):
 
 if __name__ == '__main__':
     lat, lon = RDToLatLon(120304, 474004)
-    #x, y = LatLonToRD(52.37453253, 4.88352559)
+    x, y = LatLonToRD(52.37453253, 4.88352559)
     print lat,lon
-    #print x,y
+    print x,y
+    #convertFromCSV("c:\\Users\\breinbaas\\Documents\\Databases\\In\\boreholes.csv", 3, 4, ';', True)

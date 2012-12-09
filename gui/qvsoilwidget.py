@@ -183,15 +183,16 @@ class QVSoilWidget(QFrame):
             dy = ymax - ymin
             sy = dy / (self.height() - self.margin[0] - self.margin[1]) #m / px
 
-            y1 = self.margin[0]
+            #y1 = self.margin[0]
             for g in self.__vsoil.soillayers:
                 x1 = self.margin[2]
                 x2 = self.width() - self.margin[3]
+                y1 = int(self.margin[0] + (ymax - g[0]) / sy)
                 y2 = int(self.margin[0] + (ymax - g[1]) / sy)
-                k = QColor()
+                k = QColor(255,255,255)
                 k.setNamedColor(self.__colors[g[2]][1])
                 painter.fillRect(x1,y1,x2-x1,y2-y1,QBrush(k))
-                y1 = y2
+                #y1 = y2
 
         if self.showCPT:
             ymax = self.__cpt.zmax

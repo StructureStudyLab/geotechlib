@@ -1,9 +1,18 @@
+#-------------------------------------------------------------------------------
+# Name:        soiltype
+# Purpose:
+#
+# Author:      breinbaas
+#
+# Created:     29-11-2012
+# Copyright:   (c) breinbaas 2012
+# Licence:     GPL
+#-------------------------------------------------------------------------------
 '''
 Created on 18 nov. 2012
 
 @author: breinbaas
 '''
-
 class SoilType:
     '''
     A soiltype contains the following information:
@@ -62,3 +71,4 @@ class SoilType:
         self.Cas = 0.0
         self.cv = 0.0
         self.color = "#ffffff"
+

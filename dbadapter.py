@@ -1,3 +1,13 @@
+#-------------------------------------------------------------------------------
+# Name:        dbadapter
+# Purpose:
+#
+# Author:      breinbaas
+#
+# Created:     29-11-2012
+# Copyright:   (c) breinbaas 2012
+# Licence:     GPL
+#-------------------------------------------------------------------------------
 '''
 Created on 8 nov. 2012
 
@@ -13,10 +23,13 @@ class DBAdapter:
     '''
     The adapter between the sqlite3 database with geotechnical information.
     '''
-    def __init__(self, filename):
+    def __init__(self, filename=""):
         '''
         Constructor
         '''
+        #TODO: switch to the right database depending on the platform
+        if filename == "":
+            filename = "c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite"
         self.filename = filename
 
     def open(self):
@@ -132,6 +145,19 @@ class DBAdapter:
 
         return result
 
+    def getAllSoiltypes(self):
+        '''
+        Return a list with all Soiltypes found in the database.
+        '''
+        result = []
+        self.cursor.execute('SELECT id FROM soiltypes')
+        rows = self.cursor.fetchall()
+        for r in rows:
+            st = self.getSoiltypeById(int(r[0]))
+            result.append(st)
+
+        return result
+
     def getVSoilById(self, id):
         '''
         Returns a VSoil object with the corresponding id or None.
@@ -147,6 +173,10 @@ class DBAdapter:
             result.source = str(row[1])
             result.blobToData(str(row[2]))
             return result
+
+    def updateVSoil(self, vsoil):
+        self.cursor.execute('UPDATE vsoil SET source=?, data=? WHERE id=?', (vsoil.source, sqlite3.Binary(vsoil.asText()), vsoil.id))
+        self.connection.commit()
 
     def getColors(self):
         '''
@@ -171,14 +201,12 @@ class DBAdapter:
             return None
         else:
             import soiltype
-            result = soiltype.SoilType()
-
             def setUnknownIfNone(value):
                 if value == None:
                     return -1.0 #all parameters should be >=0 so -1 is used if a value is unknown (and thus empty in the database)
                 else:
                     return float(value)
-
+            result = soiltype.SoilType()
             result.id = int(row[0])
             result.name = str(row[1])
             result.description = str(row[2])
@@ -204,7 +232,43 @@ class DBAdapter:
             result.Cas = setUnknownIfNone(row[22])
             result.cv = setUnknownIfNone(row[23])
             result.color = str(row[24])
-            return result
+        return result
+
+    def getAllOedmeterTests(self):
+        '''
+        Returns oedemetertest with an optional filter.
+        '''
+        results = []
+        self.cursor.execute('SELECT * FROM oedometer_tests')
+        rows = self.cursor.fetchall()
+
+        def setUnknownIfNone(value):
+            if value == None:
+                return -1.0 #all parameters should be >=0 so -1 is used if a value is unknown (and thus empty in the database)
+            else:
+                return float(value)
+
+        import oedometertest
+        for r in rows:
+            oed = oedometertest.OedometerTest()
+            oed.id = int(r[0])
+            oed.soiltype = str(r[1])
+            oed.ysat = float(r[2])
+            oed.p0 = setUnknownIfNone(r[3])
+            oed.pg = setUnknownIfNone(r[4])
+            oed.cp = float(r[5])
+            oed.cs = float(r[6])
+            oed.cap = float(r[7])
+            oed.cas = float(r[8])
+            oed.cv = float(r[9])
+            oed.a = setUnknownIfNone(r[10])
+            oed.b = setUnknownIfNone(r[11])
+            oed.c = setUnknownIfNone(r[12])
+            oed.depth = float(r[13])
+            oed.borhole = str(r[14])
+            results.append(oed)
+
+        return results
 
     def close(self):
         self.connection.commit()
@@ -212,13 +276,18 @@ class DBAdapter:
 
 
 if __name__=="__main__":
-    db = DBAdapter("c:\\Users\\breinbaas\\Documents\\Databases\\dijkwachter.sqlite")
+    db = DBAdapter()
     db.open()
     cpt = db.getCPTById(2)
     vs = db.getVSoilById(2)
+    #vs.source = "Testing"
+    #db.updateVSoil(vs)
     g = db.getSoiltypeById(2)
     c = db.getColors()
-    print cpt, vs, g, c
+    sts = db.getAllSoiltypes()
+    oeds = db.getAllOedmeterTests()
+
+    print cpt, vs, g, c, sts, oeds
     db.close()
 
 
